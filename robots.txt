@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://epochop.radicchio.page/sitemap.xml

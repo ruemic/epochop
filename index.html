@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>epochop — Unix Epoch Timestamp Converter</title>
+  <meta name="description" content="Convert Unix epoch timestamps to human-readable dates instantly. Paste any timestamp — seconds or milliseconds — and see UTC, local time, and relative time. Browser-side only. Nothing sent to a server.">
+  <meta name="keywords" content="epoch converter, unix timestamp to date, timestamp converter online, current unix timestamp, milliseconds to date, epoch time converter">
+  <meta property="og:title" content="epochop — Unix Epoch Timestamp Converter">
+  <meta property="og:description" content="Convert Unix timestamps to human-readable dates. Browser-side, nothing sent to a server.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://epochop.radicchio.page">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="epochop — Unix Epoch Timestamp Converter">
+  <meta name="twitter:description" content="Paste an epoch timestamp, see the date. Browser-side only.">
+  <link rel="canonical" href="https://epochop.radicchio.page">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #1a1814;
+      --surface: #221f1b;
+      --border: #2e2a25;
+      --text: #e0d8c8;
+      --muted: #8f8577;
+      --accent: #c8a84e;
+      --green: #5a9e6b;
+      --red: #b85555;
+      --blue: #5a85b8;
+      --purple: #8b7ab8;
+      --font: 'Courier New', Courier, monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    header .tagline {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* Live ticker */
+    .ticker {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .ticker-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .ticker-value {
+      color: var(--accent);
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      user-select: all;
+    }
+
+    .ticker-value:hover { text-decoration: underline; }
+
+    .ticker-date {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .ticker-copy-hint {
+      color: var(--muted);
+      font-size: 11px;
+      opacity: 0.6;
+    }
+
+    /* Converter */
+    .converter {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 600px) {
+      .converter { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: var(--border);
+      padding: 10px 16px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-body { padding: 16px; }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    input[type="text"], input[type="datetime-local"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      padding: 10px 12px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus, input[type="datetime-local"]:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="text"]::placeholder { color: var(--muted); }
+
+    .result-block {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .result-label { color: var(--muted); white-space: nowrap; }
+
+    .result-value {
+      color: var(--text);
+      font-size: 13px;
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .result-value.accent { color: var(--accent); }
+    .result-value.green { color: var(--green); }
+    .result-value.blue { color: var(--blue); }
+    .result-value.purple { color: var(--purple); }
+
+    .error-msg {
+      color: var(--red);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* Unit badge */
+    .unit-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 2px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .unit-badge.seconds { background: var(--green); color: #0d1a0f; }
+    .unit-badge.milliseconds { background: var(--purple); color: #0d0d1a; }
+
+    /* Offsets */
+    .offsets {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+    }
+
+    .offsets-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .offset-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .offset-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 6px 12px;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .offset-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Copy button */
+    .copy-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      transition: color 0.15s;
+    }
+
+    .copy-btn:hover { color: var(--accent); }
+    .copy-btn.copied { color: var(--green); }
+
+    /* Content */
+    section.content {
+      border-top: 1px solid var(--border);
+      padding-top: 32px;
+      margin-top: 8px;
+    }
+
+    section.content h2 {
+      font-size: 16px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    section.content p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+      margin-bottom: 16px;
+      max-width: 680px;
+    }
+
+    section.content code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1px 5px;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    /* FAQ */
+    .faq { margin-top: 32px; }
+
+    .faq h2 {
+      font-size: 16px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .faq-item {
+      border-top: 1px solid var(--border);
+      padding: 16px 0;
+    }
+
+    .faq-q {
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .faq-a {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* Cross-links */
+    .more-tools {
+      margin-top: 40px;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+
+    .more-tools-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .tool-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tool-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tool-links a:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 40px;
+    }
+
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "epochop",
+        "url": "https://epochop.radicchio.page",
+        "description": "Convert Unix epoch timestamps to human-readable dates. Browser-side only, nothing sent to a server.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is a Unix epoch timestamp?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A Unix epoch timestamp is the number of seconds (or milliseconds) that have elapsed since January 1, 1970 00:00:00 UTC. It is used universally in computing to represent dates and times as a single integer."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I convert a Unix timestamp to a date?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Paste the timestamp into epochop's input field. It automatically detects whether the value is in seconds or milliseconds and shows you the UTC date, local date, and relative time instantly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does epochop tell seconds from milliseconds?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "epochop checks whether the timestamp is greater than 1e12. Values above that threshold are treated as milliseconds (ms), which represent dates after 2001. Values at or below are treated as seconds, which represent dates back to 1970."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the current Unix timestamp?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The live ticker at the top of epochop shows the current Unix timestamp updating every second. You can click it to copy the current value."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the maximum Unix timestamp?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The maximum 32-bit signed Unix timestamp is 2,147,483,647, which corresponds to January 19, 2038 03:14:07 UTC — this is the Year 2038 problem. 64-bit systems can handle timestamps far beyond this limit."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does epochop send my timestamps to a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. All conversion logic runs in your browser using the JavaScript Date API. Nothing is sent to any server. Your timestamps stay local."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where are epoch timestamps used?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "JWT tokens use epoch timestamps for exp (expiry), iat (issued at), and nbf (not before) claims. Server logs, API responses, database columns, Stripe webhook events, and most Unix system calls return epoch timestamps."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<header>
+  <h1>epochop</h1>
+  <span class="tagline">unix epoch timestamp converter &mdash; browser-side, nothing sent to a server</span>
+</header>
+
+<main class="main">
+
+  <!-- Live ticker -->
+  <div class="ticker">
+    <span class="ticker-label">now</span>
+    <span class="ticker-value" id="ticker" title="Click to copy" onclick="copyTicker()">loading...</span>
+    <span class="ticker-date" id="ticker-date"></span>
+    <span class="ticker-copy-hint" id="ticker-hint"></span>
+  </div>
+
+  <!-- Bidirectional converter -->
+  <div class="converter">
+
+    <!-- Epoch → Date -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>epoch &rarr; date</span>
+        <span id="unit-badge"></span>
+      </div>
+      <div class="panel-body">
+        <div class="input-group">
+          <input type="text" id="epoch-input" placeholder="1741730648 or 1741730648000" autofocus spellcheck="false">
+        </div>
+        <div class="result-block" id="epoch-results"></div>
+      </div>
+    </div>
+
+    <!-- Date → Epoch -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>date &rarr; epoch</span>
+      </div>
+      <div class="panel-body">
+        <div class="input-group">
+          <input type="datetime-local" id="date-input" step="1">
+        </div>
+        <div class="result-block" id="date-results"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Quick offsets -->
+  <div class="offsets">
+    <div class="offsets-title">quick offsets</div>
+    <div class="offset-grid" id="offset-grid"></div>
+  </div>
+
+  <!-- Content section -->
+  <section class="content">
+    <h2>What is a Unix epoch timestamp?</h2>
+    <p>A Unix epoch timestamp is the number of seconds (or milliseconds) elapsed since <strong>January 1, 1970 00:00:00 UTC</strong> — also called the Unix epoch or POSIX time. It is the universal language of time in computing: a single integer that represents any moment unambiguously, with no timezone confusion and no locale formatting.</p>
+    <p>Epoch timestamps appear everywhere in software development. JWT tokens encode the expiry (<code>exp</code>), issued-at (<code>iat</code>), and not-before (<code>nbf</code>) claims as epoch seconds. Server logs, API responses, database timestamps, Stripe webhook events, GitHub event payloads, and nearly all Unix system calls return epoch integers. When you see a number like <code>1741730648</code> in a log or a JSON body, you are looking at an epoch timestamp.</p>
+    <p>epochop converts these integers to human-readable dates instantly — and back. All conversion logic runs in your browser via the JavaScript <code>Date</code> API. Nothing is sent to a server. The live ticker at the top shows the current epoch, updating every second. Quick-offset buttons let you jump to common reference points: now, an hour ago, yesterday, a week ago, a month ago, a year ago.</p>
+    <p>epochop auto-detects whether a timestamp is in seconds or milliseconds. Values over 1 trillion are treated as milliseconds (representing dates after 2001); smaller values are treated as seconds. Both formats are common — Unix system time is in seconds, JavaScript's <code>Date.now()</code> is in milliseconds, and APIs vary.</p>
+
+    <!-- FAQ -->
+    <div class="faq">
+      <h2>Frequently asked questions</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">How does epochop detect seconds vs milliseconds?</div>
+        <div class="faq-a">Any value greater than 10<sup>12</sup> is treated as milliseconds. Values at or below that threshold are treated as seconds. This threshold corresponds to September 2001 in milliseconds, so all modern ms timestamps are safely above it.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What is the current Unix timestamp?</div>
+        <div class="faq-a">The live ticker at the top of this page shows the current Unix timestamp, updated every second. Click it to copy the current value to your clipboard.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What is the Year 2038 problem?</div>
+        <div class="faq-a">32-bit signed integers can represent a maximum Unix timestamp of 2,147,483,647, which is January 19, 2038 03:14:07 UTC. Systems that store timestamps in 32-bit signed integers will overflow on that date. Modern systems use 64-bit integers and are not affected.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Why do JWT tokens use epoch timestamps?</div>
+        <div class="faq-a">JWT (JSON Web Token) claims like <code>exp</code> (expiry), <code>iat</code> (issued at), and <code>nbf</code> (not before) are specified in the RFC as epoch seconds. This avoids timezone and locale ambiguity — the same integer means the same moment everywhere. If you are debugging a JWT and need to read these claims, paste the value here or use <a href="https://jwtchop.radicchio.page" style="color:var(--accent)">jwtchop</a> to decode the full token.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Does epochop work offline?</div>
+        <div class="faq-a">Yes. Once the page loads, all conversion logic runs client-side. The page will continue to work with no internet connection. There is nothing to fetch from a server.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">How do I convert a date to an epoch timestamp?</div>
+        <div class="faq-a">Use the <em>date → epoch</em> panel on the right. Pick a date and time using the date picker — the epoch timestamp in both seconds and milliseconds is shown instantly below the input.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What is the Unix epoch timestamp for midnight Jan 1 2000 UTC?</div>
+        <div class="faq-a">946,684,800 seconds. You can verify this by entering 946684800 in the epoch input above.</div>
+      </div>
+    </div>
+
+    <!-- More tools -->
+    <div class="more-tools">
+      <div class="more-tools-title">more tools</div>
+      <div class="tool-links">
+        <a href="https://jwtchop.radicchio.page">jwtchop &mdash; JWT decoder</a>
+        <a href="https://hashchop.radicchio.page">hashchop &mdash; hash generator</a>
+        <a href="https://cronfig.radicchio.page">cronfig &mdash; cron builder</a>
+        <a href="https://envlint.radicchio.page">envlint &mdash; .env linter</a>
+        <a href="https://difflint.radicchio.page">difflint &mdash; diff checker</a>
+        <a href="https://feedlint.radicchio.page">feedlint &mdash; RSS validator</a>
+        <a href="https://linkscrub.radicchio.page">linkscrub &mdash; URL cleaner</a>
+        <a href="https://qrnch.radicchio.page">qrnch &mdash; QR generator</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Support: <a href="https://bitterdesk.com">bitterdesk.com</a></span>
+  <span><a href="#">epochop</a> &mdash; browser-side, no data collected</span>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Helpers ──────────────────────────────────────────────────────────
+
+  function isMs(val) {
+    return Math.abs(val) > 1e12;
+  }
+
+  function toDate(val) {
+    const n = parseFloat(val);
+    if (isNaN(n)) return null;
+    return isMs(n) ? new Date(n) : new Date(n * 1000);
+  }
+
+  function relativeTime(date) {
+    const diff = Math.round((date - Date.now()) / 1000);
+    const abs = Math.abs(diff);
+    const past = diff < 0;
+    let str;
+    if (abs < 10) str = 'just now';
+    else if (abs < 60) str = abs + 's';
+    else if (abs < 3600) str = Math.round(abs / 60) + 'm';
+    else if (abs < 86400) str = Math.round(abs / 3600) + 'h';
+    else if (abs < 86400 * 30) str = Math.round(abs / 86400) + 'd';
+    else if (abs < 86400 * 365) str = Math.round(abs / (86400 * 30)) + 'mo';
+    else str = Math.round(abs / (86400 * 365)) + 'y';
+    if (abs < 10) return str;
+    return past ? str + ' ago' : 'in ' + str;
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function fmtUTC(d) {
+    return d.getUTCFullYear() + '-' + pad(d.getUTCMonth()+1) + '-' + pad(d.getUTCDate()) +
+           ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds()) + ' UTC';
+  }
+
+  function fmtLocal(d) {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return d.toLocaleString('sv-SE', { timeZone: tz }) + ' ' + tz;
+  }
+
+  function fmtISO(d) {
+    return d.toISOString();
+  }
+
+  function epochSec(d) { return Math.floor(d.getTime() / 1000); }
+  function epochMs(d)  { return d.getTime(); }
+
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (btn) {
+        btn.textContent = 'copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'copy';
+          btn.classList.remove('copied');
+        }, 1200);
+      }
+    });
+  }
+
+  function makeRow(label, value, cls, copyVal) {
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    const lEl = document.createElement('span');
+    lEl.className = 'result-label';
+    lEl.textContent = label;
+    const vEl = document.createElement('span');
+    vEl.className = 'result-value' + (cls ? ' ' + cls : '');
+    vEl.textContent = value;
+    row.appendChild(lEl);
+    row.appendChild(vEl);
+    if (copyVal !== undefined) {
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.onclick = () => copyText(copyVal ?? value, btn);
+      row.appendChild(btn);
+    }
+    return row;
+  }
+
+  // ── Live ticker ───────────────────────────────────────────────────────
+
+  const tickerEl   = document.getElementById('ticker');
+  const tickerDate = document.getElementById('ticker-date');
+
+  function updateTicker() {
+    const now = Date.now();
+    const sec = Math.floor(now / 1000);
+    tickerEl.textContent = sec;
+    tickerEl.dataset.val = sec;
+    tickerDate.textContent = fmtUTC(new Date(now));
+  }
+
+  window.copyTicker = function() {
+    const val = tickerEl.dataset.val || tickerEl.textContent;
+    navigator.clipboard.writeText(val).then(() => {
+      const hint = document.getElementById('ticker-hint');
+      hint.textContent = 'copied!';
+      setTimeout(() => { hint.textContent = ''; }, 1200);
+    });
+  };
+
+  updateTicker();
+  setInterval(updateTicker, 1000);
+
+  // ── Epoch → Date ──────────────────────────────────────────────────────
+
+  const epochInput   = document.getElementById('epoch-input');
+  const epochResults = document.getElementById('epoch-results');
+  const unitBadge    = document.getElementById('unit-badge');
+
+  function renderEpochResults(raw) {
+    epochResults.innerHTML = '';
+    unitBadge.innerHTML = '';
+    if (!raw || raw.trim() === '') return;
+    const val = raw.trim();
+    const n = parseFloat(val);
+    if (isNaN(n) || !isFinite(n)) {
+      epochResults.appendChild(makeRow('', 'not a valid number', 'error-msg'));
+      return;
+    }
+    const ms = isMs(n);
+    const date = toDate(n);
+    if (!date || isNaN(date)) {
+      epochResults.appendChild(makeRow('', 'could not parse', 'error-msg'));
+      return;
+    }
+
+    const badge = document.createElement('span');
+    badge.className = 'unit-badge ' + (ms ? 'milliseconds' : 'seconds');
+    badge.textContent = ms ? 'ms' : 'sec';
+    unitBadge.appendChild(badge);
+
+    epochResults.appendChild(makeRow('UTC', fmtUTC(date), 'accent', fmtUTC(date)));
+    epochResults.appendChild(makeRow('local', fmtLocal(date), 'green', fmtLocal(date)));
+    epochResults.appendChild(makeRow('ISO 8601', fmtISO(date), 'blue', fmtISO(date)));
+    epochResults.appendChild(makeRow('relative', relativeTime(date), 'purple'));
+    if (ms) {
+      epochResults.appendChild(makeRow('seconds', epochSec(date), '', String(epochSec(date))));
+    } else {
+      epochResults.appendChild(makeRow('milliseconds', epochMs(date), '', String(epochMs(date))));
+    }
+  }
+
+  epochInput.addEventListener('input', () => renderEpochResults(epochInput.value));
+
+  // Check URL hash on load (deep-link: epochop.radicchio.page#1741730648)
+  if (location.hash.length > 1) {
+    const hashVal = location.hash.slice(1);
+    epochInput.value = hashVal;
+    renderEpochResults(hashVal);
+  }
+
+  // ── Date → Epoch ──────────────────────────────────────────────────────
+
+  const dateInput   = document.getElementById('date-input');
+  const dateResults = document.getElementById('date-results');
+
+  function initDateInput() {
+    const now = new Date();
+    const local = now.getFullYear() + '-' +
+      pad(now.getMonth()+1) + '-' + pad(now.getDate()) + 'T' +
+      pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    dateInput.value = local;
+    renderDateResults(local);
+  }
+
+  function renderDateResults(val) {
+    dateResults.innerHTML = '';
+    if (!val) return;
+    const d = new Date(val);
+    if (isNaN(d)) { dateResults.innerHTML = '<div class="error-msg">invalid date</div>'; return; }
+    dateResults.appendChild(makeRow('epoch (seconds)', epochSec(d), 'accent', String(epochSec(d))));
+    dateResults.appendChild(makeRow('epoch (ms)', epochMs(d), 'green', String(epochMs(d))));
+    dateResults.appendChild(makeRow('UTC', fmtUTC(d), 'blue', fmtUTC(d)));
+    dateResults.appendChild(makeRow('ISO 8601', fmtISO(d), 'purple', fmtISO(d)));
+    dateResults.appendChild(makeRow('relative', relativeTime(d)));
+  }
+
+  dateInput.addEventListener('input', () => renderDateResults(dateInput.value));
+  initDateInput();
+
+  // ── Quick offsets ─────────────────────────────────────────────────────
+
+  const offsets = [
+    { label: 'now',    delta: 0 },
+    { label: '-1 min', delta: -60 },
+    { label: '-1 hr',  delta: -3600 },
+    { label: '-6 hr',  delta: -3600 * 6 },
+    { label: '-24 hr', delta: -86400 },
+    { label: '-7 d',   delta: -86400 * 7 },
+    { label: '-30 d',  delta: -86400 * 30 },
+    { label: '-1 yr',  delta: -86400 * 365 },
+    { label: '+1 hr',  delta: 3600 },
+    { label: '+24 hr', delta: 86400 },
+    { label: '+7 d',   delta: 86400 * 7 },
+    { label: '+30 d',  delta: 86400 * 30 },
+    { label: '+1 yr',  delta: 86400 * 365 },
+    { label: 'Y2K (2000-01-01)', delta: null, epoch: 946684800 },
+    { label: 'Y2038 limit',      delta: null, epoch: 2147483647 },
+  ];
+
+  const grid = document.getElementById('offset-grid');
+
+  offsets.forEach(({ label, delta, epoch }) => {
+    const btn = document.createElement('button');
+    btn.className = 'offset-btn';
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      const val = epoch !== undefined ? epoch : Math.floor(Date.now() / 1000) + delta;
+      epochInput.value = val;
+      renderEpochResults(String(val));
+      epochInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    grid.appendChild(btn);
+  });
+
+})();
+</script>
+
+</body>
+</html>
