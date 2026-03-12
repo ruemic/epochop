@@ -541,37 +541,37 @@
       <h2>Frequently asked questions</h2>
 
       <div class="faq-item">
-        <div class="faq-q">How does epochop detect seconds vs milliseconds?</div>
+        <h3 class="faq-q">How does epochop detect seconds vs milliseconds?</h3>
         <div class="faq-a">Any value greater than 10<sup>12</sup> is treated as milliseconds. Values at or below that threshold are treated as seconds. This threshold corresponds to September 2001 in milliseconds, so all modern ms timestamps are safely above it.</div>
       </div>
 
       <div class="faq-item">
-        <div class="faq-q">What is the current Unix timestamp?</div>
+        <h3 class="faq-q">What is the current Unix timestamp?</h3>
         <div class="faq-a">The live ticker at the top of this page shows the current Unix timestamp, updated every second. Click it to copy the current value to your clipboard.</div>
       </div>
 
       <div class="faq-item">
-        <div class="faq-q">What is the Year 2038 problem?</div>
+        <h3 class="faq-q">What is the Year 2038 problem?</h3>
         <div class="faq-a">32-bit signed integers can represent a maximum Unix timestamp of 2,147,483,647, which is January 19, 2038 03:14:07 UTC. Systems that store timestamps in 32-bit signed integers will overflow on that date. Modern systems use 64-bit integers and are not affected.</div>
       </div>
 
       <div class="faq-item">
-        <div class="faq-q">Why do JWT tokens use epoch timestamps?</div>
+        <h3 class="faq-q">Why do JWT tokens use epoch timestamps?</h3>
         <div class="faq-a">JWT (JSON Web Token) claims like <code>exp</code> (expiry), <code>iat</code> (issued at), and <code>nbf</code> (not before) are specified in the RFC as epoch seconds. This avoids timezone and locale ambiguity — the same integer means the same moment everywhere. If you are debugging a JWT and need to read these claims, paste the value here or use <a href="https://jwtchop.radicchio.page" style="color:var(--accent)">jwtchop</a> to decode the full token.</div>
       </div>
 
       <div class="faq-item">
-        <div class="faq-q">Does epochop work offline?</div>
+        <h3 class="faq-q">Does epochop work offline?</h3>
         <div class="faq-a">Yes. Once the page loads, all conversion logic runs client-side. The page will continue to work with no internet connection. There is nothing to fetch from a server.</div>
       </div>
 
       <div class="faq-item">
-        <div class="faq-q">How do I convert a date to an epoch timestamp?</div>
+        <h3 class="faq-q">How do I convert a date to an epoch timestamp?</h3>
         <div class="faq-a">Use the <em>date → epoch</em> panel on the right. Pick a date and time using the date picker — the epoch timestamp in both seconds and milliseconds is shown instantly below the input.</div>
       </div>
 
       <div class="faq-item">
-        <div class="faq-q">What is the Unix epoch timestamp for midnight Jan 1 2000 UTC?</div>
+        <h3 class="faq-q">What is the Unix epoch timestamp for midnight Jan 1 2000 UTC?</h3>
         <div class="faq-a">946,684,800 seconds. You can verify this by entering 946684800 in the epoch input above.</div>
       </div>
     </div>
