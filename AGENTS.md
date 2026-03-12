@@ -63,4 +63,4 @@ Free. No API key. No account. No server.
 
 ## Contact / support
 
-[bitterdesk.com](https://bitterdesk.com)
+[bitterdesk.com/s/epochop/](https://bitterdesk.com/s/epochop/)
