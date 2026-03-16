@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+
+// Usage: bin/page-inspect <url> [--screenshot /tmp/out.png]
+//
+// Loads a URL in headless Chromium and prints text-based page info:
+//   - Title, URL, status code
+//   - Console errors/warnings
+//   - Accessibility tree snapshot (what a screen reader sees)
+//
+// Designed for text-only models that can't view screenshots.
+// Requires Playwright installed in ui/node_modules.
+
+const { chromium } = require('playwright')
+
+const args = process.argv.slice(2)
+const url = args.find(a => !a.startsWith('--'))
+if (!url) {
+  console.error('Usage: bin/page-inspect <url> [--screenshot /tmp/out.png]')
+  process.exit(1)
+}
+
+const ssIdx = args.indexOf('--screenshot')
+const screenshotPath = ssIdx !== -1 ? args[ssIdx + 1] : null
+
+async function main() {
+  const browser = await chromium.launch()
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+
+  const consoleMessages = []
+  page.on('console', msg => {
+    if (['error', 'warning'].includes(msg.type())) {
+      consoleMessages.push(`[${msg.type()}] ${msg.text()}`)
+    }
+  })
+
+  const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 })
+  await page.waitForTimeout(1000)
+
+  console.log(`# Page Inspection: ${url}`)
+  console.log(`Status: ${response.status()}`)
+  console.log(`Title: ${await page.title()}`)
+  console.log()
+
+  if (consoleMessages.length) {
+    console.log(`## Console (${consoleMessages.length} issues)`)
+    consoleMessages.forEach(m => console.log(m))
+    console.log()
+  } else {
+    console.log('## Console: clean')
+    console.log()
+  }
+
+  console.log('## Accessibility Tree')
+  const snapshot = await page.locator('body').ariaSnapshot()
+  console.log(snapshot)
+
+  if (screenshotPath) {
+    await page.screenshot({ path: screenshotPath, fullPage: true })
+    console.log(`\n## Screenshot saved: ${screenshotPath}`)
+  }
+
+  await browser.close()
+}
+
+main().catch(e => {
+  console.error(e.message)
+  process.exit(1)
+})
