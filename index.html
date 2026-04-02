@@ -407,67 +407,7 @@
           "price": "0",
           "priceCurrency": "USD"
         }
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does epochop detect seconds vs milliseconds?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Any value greater than 10^12 is treated as milliseconds. Values at or below that threshold are treated as seconds. This threshold corresponds to September 2001 in milliseconds, so all modern ms timestamps are safely above it."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the current Unix timestamp?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The live ticker at the top of this page shows the current Unix timestamp, updated every second. Click it to copy the current value to your clipboard."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the Year 2038 problem?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "32-bit signed integers can represent a maximum Unix timestamp of 2,147,483,647, which is January 19, 2038 03:14:07 UTC. Systems that store timestamps in 32-bit signed integers will overflow on that date. Modern systems use 64-bit integers and are not affected."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do JWT tokens use epoch timestamps?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "JWT (JSON Web Token) claims like exp (expiry), iat (issued at), and nbf (not before) are specified in the RFC as epoch seconds. This avoids timezone and locale ambiguity — the same integer means the same moment everywhere."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does epochop work offline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Once the page loads, all conversion logic runs client-side. The page will continue to work with no internet connection. There is nothing to fetch from a server."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I convert a date to an epoch timestamp?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use the date to epoch panel on the right. Pick a date and time using the date picker — the epoch timestamp in both seconds and milliseconds is shown instantly below the input."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the Unix epoch timestamp for midnight Jan 1 2000 UTC?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "946,684,800 seconds. You can verify this by entering 946684800 in the epoch input above."
-            }
-          }
-        ]
+      }]
       }
     ]
   }
